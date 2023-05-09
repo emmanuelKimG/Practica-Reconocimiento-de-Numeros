@@ -22,8 +22,8 @@ class Canvas:
         analyze_button = tk.Button(self.master, text="Analizar", command=self.analyze_drawing)
         analyze_button.pack(side=tk.RIGHT)
 
-        self.model = tf.keras.models.load_model("modelo.h5")
-
+        self.model = tf.keras.models.load_model("modelo_normal.h5")
+        self.model2 = tf.keras.models.load_model("modelo_convu.h5")
 
     def draw(self, event):
         x,y = event.x, event.y
@@ -33,26 +33,34 @@ class Canvas:
     def clear_canvas(self):
         self.canvas.delete("all")
 
-    def analyze_drawing(self):
-        ps = self.canvas.postscript(colormode="gray")        
+    def analyze_drawing(self):    
         try:
-            x0 = self.canvas.winfo_rootx()
-            y0 = self.canvas.winfo_rooty()
-            x1 = x0 + self.canvas.winfo_width()
-            y1 = y0 + self.canvas.winfo_height()
+            x0 = self.canvas.winfo_rootx() + 8
+            y0 = self.canvas.winfo_rooty() + 8
+            x1 = x0 + SCREEN_WIDTH
+            y1 = y0 + SCREEN_HEIGHT
             
             im = ImageGrab.grab((x0, y0, x1, y1))
             im.save('mypic.png') # Can also say im.show() to display it
 
-            img = Image.open('mypic.png').convert('L')
-            img = img.crop((0, 0, SCREEN_WIDTH, SCREEN_HEIGHT))
-            img = img.resize((28, 28))
-            img_array = np.array(img).astype("float32") / 255.0
+            img = Image.open('mypic.png')
+            img = img.convert('L').resize((28, 28))
+            img_array = np.array(img)
+            img_array = 255 - img_array
+            img_array = img_array.astype('float32') / 255.0
+            # img_array = img_array.reshape((1, 28*28))
             img_array = img_array.reshape((1, 28, 28, 1))
+            
             prediction = self.model.predict(img_array)
             predicted_number = np.argmax(prediction)
             
+            
+            prediction2 = self.model2.predict(img_array)
+            predicted_number2 = np.argmax(prediction2)
+            
             print("Número predicho:", predicted_number)
+            print("Número predicho convu:", predicted_number2)
+            
         except Exception as e:
             print("Error creating PIL image:", e)
 
